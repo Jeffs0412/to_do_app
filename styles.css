@@ -171,6 +171,68 @@ button:hover {
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
 }
 
+/* Utility */
+
+/* Modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 1.25rem 1rem;
+}
+
+.modal h2 {
+    font-size: 1.25rem;
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.modal p {
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    color: #222;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+}
+
+.btn-secondary:hover {
+    background-color: #d5d5d5;
+}
+
+.btn-danger {
+    background-color: #e53935;
+    color: #fff;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+}
+
+.btn-danger:hover {
+    background-color: #c62828;
+}
+
 /* Media Queries for Responsive Design */
 @media screen and (max-width: 480px) {
     body {
@@ -230,6 +292,21 @@ button:hover {
         width: 100%;
         margin: 0.5rem 0;
     }
+
+    /* Mobile adjustments */
+    .modal {
+        max-width: 100%;
+        padding: 1rem 0.75rem;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-secondary,
+    .btn-danger {
+        width: 100%;
+    }
 }
 
 /* Tablet and Medium-sized screens */
@@ -262,3 +339,7 @@ button:hover {
         min-height: 24px;
     }
 } 
+
+.hidden {
+    display: none;
+}

@@ -4,6 +4,7 @@ class TodoList {
         this.todos = JSON.parse(localStorage.getItem('todos')) || [];
         this.currentFilter = 'all';
         this.editingId = null;
+        this.pendingDeleteId = null;
         this.initializeElements();
         this.attachEventListeners();
         this.render();
@@ -14,6 +15,10 @@ class TodoList {
         this.addButton = document.getElementById('addButton');
         this.todoList = document.getElementById('todoList');
         this.filterButtons = document.querySelectorAll('.filter-btn');
+        // Modal elements
+        this.modalBackdrop = document.getElementById('modalBackdrop');
+        this.confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        this.cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
     }
 
     attachEventListeners() {
@@ -27,6 +32,24 @@ class TodoList {
                 this.setFilter(button.dataset.filter);
                 this.updateFilterButtons(button);
             });
+        });
+
+        // Modal events
+        if (this.cancelDeleteBtn) {
+            this.cancelDeleteBtn.addEventListener('click', () => this.closeDeleteModal());
+        }
+        if (this.confirmDeleteBtn) {
+            this.confirmDeleteBtn.addEventListener('click', () => this.confirmDelete());
+        }
+        if (this.modalBackdrop) {
+            this.modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === this.modalBackdrop) this.closeDeleteModal();
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !this.modalBackdrop.classList.contains('hidden')) {
+                this.closeDeleteModal();
+            }
         });
     }
 
@@ -49,6 +72,28 @@ class TodoList {
         this.todos = this.todos.filter(todo => todo.id !== id);
         this.saveTodos();
         this.render();
+    }
+
+    openDeleteModal(id) {
+        this.pendingDeleteId = id;
+        this.modalBackdrop.classList.remove('hidden');
+        this.modalBackdrop.setAttribute('aria-hidden', 'false');
+        if (this.cancelDeleteBtn) this.cancelDeleteBtn.focus();
+    }
+
+    closeDeleteModal() {
+        this.modalBackdrop.classList.add('hidden');
+        this.modalBackdrop.setAttribute('aria-hidden', 'true');
+        this.pendingDeleteId = null;
+    }
+
+    confirmDelete() {
+        if (this.pendingDeleteId !== null) {
+            const id = this.pendingDeleteId;
+            this.pendingDeleteId = null;
+            this.deleteTodo(id);
+        }
+        this.closeDeleteModal();
     }
 
     toggleTodo(id) {
@@ -105,7 +150,7 @@ class TodoList {
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-btn';
         deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => this.deleteTodo(todo.id));
+        deleteButton.addEventListener('click', () => this.openDeleteModal(todo.id));
 
         li.appendChild(checkbox);
         li.appendChild(span);
