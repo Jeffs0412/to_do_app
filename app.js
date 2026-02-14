@@ -133,7 +133,19 @@ class TodoList {
     createTodoElement(todo) {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
-        
+        li.setAttribute('data-id', todo.id);
+
+        const canDrag = this.currentFilter === 'all' && this.editingId !== todo.id;
+        if (canDrag) {
+            li.draggable = true;
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.setAttribute('aria-label', 'Drag to reorder');
+            dragHandle.textContent = '⋮⋮';
+            li.appendChild(dragHandle);
+            this.attachDragListeners(li, todo.id);
+        }
+
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = todo.completed;
@@ -141,6 +153,7 @@ class TodoList {
 
         const span = document.createElement('span');
         span.textContent = todo.text;
+        span.className = 'todo-text';
 
         const editButton = document.createElement('button');
         editButton.className = 'edit-btn';
@@ -160,6 +173,54 @@ class TodoList {
         return li;
     }
 
+    attachDragListeners(li, todoId) {
+        li.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', String(todoId));
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setDragImage(li, 0, 0);
+            li.classList.add('dragging');
+        });
+
+        li.addEventListener('dragend', () => {
+            li.classList.remove('dragging');
+            this.todoList.querySelectorAll('.todo-item').forEach(el => el.classList.remove('drag-over'));
+        });
+
+        li.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const dragging = this.todoList.querySelector('.dragging');
+            if (dragging && dragging !== li) {
+                li.classList.add('drag-over');
+            }
+        });
+
+        li.addEventListener('dragleave', () => {
+            li.classList.remove('drag-over');
+        });
+
+        li.addEventListener('drop', (e) => {
+            e.preventDefault();
+            li.classList.remove('drag-over');
+            const draggedId = Number(e.dataTransfer.getData('text/plain'));
+            if (draggedId === todoId) return;
+            this.reorderTodos(draggedId, todoId);
+        });
+    }
+
+    reorderTodos(draggedId, targetId) {
+        const fromIndex = this.todos.findIndex(t => t.id === draggedId);
+        const toIndex = this.todos.findIndex(t => t.id === targetId);
+        if (fromIndex === -1 || toIndex === -1) return;
+        const newTodos = [...this.todos];
+        const [removed] = newTodos.splice(fromIndex, 1);
+        const insertIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+        newTodos.splice(insertIndex, 0, removed);
+        this.todos = newTodos;
+        this.saveTodos();
+        this.render();
+    }
+
     startEditing(id) {
         if (this.editingId === id) return;
         
@@ -170,8 +231,11 @@ class TodoList {
         const todoElement = document.querySelector(`[data-id="${id}"]`);
         if (!todoElement) return;
 
-        const span = todoElement.querySelector('span');
-        const currentText = span.textContent;
+        const dragHandle = todoElement.querySelector('.drag-handle');
+        if (dragHandle) dragHandle.style.display = 'none';
+
+        const todoText = todoElement.querySelector('.todo-text');
+        const currentText = todoText.textContent;
 
         const input = document.createElement('input');
         input.type = 'text';
@@ -188,7 +252,7 @@ class TodoList {
         cancelButton.className = 'cancel-btn';
         cancelButton.addEventListener('click', () => this.cancelEdit());
 
-        span.replaceWith(input);
+        todoText.replaceWith(input);
         todoElement.querySelector('.edit-btn').replaceWith(saveButton, cancelButton);
         input.focus();
     }
@@ -218,7 +282,6 @@ class TodoList {
         const filteredTodos = this.getFilteredTodos();
         filteredTodos.forEach(todo => {
             const element = this.createTodoElement(todo);
-            element.setAttribute('data-id', todo.id);
             this.todoList.appendChild(element);
         });
     }
