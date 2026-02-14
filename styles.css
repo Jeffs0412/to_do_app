@@ -94,10 +94,34 @@ button:hover {
     transition: background-color 0.3s;
     gap: 0.5rem;
     flex-wrap: wrap;
+    cursor: default;
 }
 
 .todo-item:hover {
     background-color: #f0f0f0;
+}
+
+.todo-item .drag-handle {
+    cursor: grab;
+    color: #999;
+    font-size: 1rem;
+    padding: 0 0.05rem;
+    margin-right: -0.35rem;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.todo-item .drag-handle:active {
+    cursor: grabbing;
+}
+
+.todo-item.dragging {
+    opacity: 0.9;
+    background-color: #e8e8e8;
+}
+
+.todo-item.drag-over {
+    border-top: 2px solid #4CAF50;
 }
 
 .todo-item.completed span {
