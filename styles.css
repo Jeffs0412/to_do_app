@@ -95,6 +95,8 @@ button:hover {
     gap: 0.5rem;
     flex-wrap: wrap;
     cursor: default;
+    position: relative;
+    padding-left: 2.2rem;
 }
 
 .todo-item:hover {
@@ -109,6 +111,48 @@ button:hover {
     margin-right: -0.35rem;
     user-select: none;
     flex-shrink: 0;
+}
+
+.insert-controls {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.insert-btn {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 600;
+    background-color: #ffffff;
+    border: 1px solid #cfd8dc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    color: #2e7d32;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.todo-item:hover .insert-btn,
+.todo-item:focus-within .insert-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.insert-btn:hover {
+    background-color: #4CAF50;
+    color: #fff;
+    transform: scale(1.05);
 }
 
 .todo-item .drag-handle:active {
@@ -295,6 +339,18 @@ button:hover {
 
     .todo-item {
         padding: 0.8rem;
+        padding-left: 2.8rem;
+    }
+
+    .insert-controls {
+        left: 0.65rem;
+        gap: 0.35rem;
+    }
+
+    .insert-btn {
+        width: 1.45rem;
+        height: 1.45rem;
+        font-size: 0.95rem;
     }
 
     .todo-item span {
@@ -341,6 +397,17 @@ button:hover {
 
     .todo-item {
         padding: 0.8rem;
+        padding-left: 2.6rem;
+    }
+
+    .insert-controls {
+        gap: 0.3rem;
+    }
+
+    .insert-btn {
+        width: 1.3rem;
+        height: 1.3rem;
+        font-size: 0.9rem;
     }
 
     .todo-item .edit-btn,
@@ -361,6 +428,11 @@ button:hover {
     input[type="checkbox"] {
         min-width: 24px;
         min-height: 24px;
+    }
+
+    .insert-btn {
+        opacity: 1;
+        pointer-events: auto;
     }
 } 
 
