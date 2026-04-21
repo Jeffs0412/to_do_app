@@ -4,6 +4,7 @@ class TodoList {
         this.todos = JSON.parse(localStorage.getItem('todos')) || [];
         this.currentFilter = 'all';
         this.editingId = null;
+        this.pendingInsert = null;
         this.pendingDeleteId = null;
         this.initializeElements();
         this.attachEventListeners();
@@ -72,16 +73,38 @@ class TodoList {
         };
     }
 
-    addTodoRelativeTo(referenceId, position) {
-        const referenceIndex = this.todos.findIndex(todo => todo.id === referenceId);
-        if (referenceIndex === -1) return;
+    startPendingInsert(referenceId, position) {
+        if (this.editingId !== null) return;
 
-        const newTodo = this.createTodo('New item');
-        const insertIndex = position === 'above' ? referenceIndex : referenceIndex + 1;
+        const referenceExists = this.todos.some(todo => todo.id === referenceId);
+        if (!referenceExists) return;
+
+        this.pendingInsert = { referenceId, position };
+        this.render();
+    }
+
+    savePendingInsert(newText) {
+        if (!this.pendingInsert) return;
+        const trimmedText = newText.trim();
+        if (!trimmedText) return;
+
+        const referenceIndex = this.todos.findIndex(todo => todo.id === this.pendingInsert.referenceId);
+        if (referenceIndex === -1) {
+            this.cancelPendingInsert();
+            return;
+        }
+
+        const insertIndex = this.pendingInsert.position === 'above' ? referenceIndex : referenceIndex + 1;
+        const newTodo = this.createTodo(trimmedText);
         this.todos.splice(insertIndex, 0, newTodo);
+        this.pendingInsert = null;
         this.saveTodos();
         this.render();
-        this.startEditing(newTodo.id);
+    }
+
+    cancelPendingInsert() {
+        this.pendingInsert = null;
+        this.render();
     }
 
     deleteTodo(id) {
@@ -155,10 +178,10 @@ class TodoList {
         insertControls.className = 'insert-controls';
         const addAboveButton = this.createInsertButton('+', 'Add item above');
         addAboveButton.classList.add('add-above-btn');
-        addAboveButton.addEventListener('click', () => this.addTodoRelativeTo(todo.id, 'above'));
+        addAboveButton.addEventListener('click', () => this.startPendingInsert(todo.id, 'above'));
         const addBelowButton = this.createInsertButton('+', 'Add item below');
         addBelowButton.classList.add('add-below-btn');
-        addBelowButton.addEventListener('click', () => this.addTodoRelativeTo(todo.id, 'below'));
+        addBelowButton.addEventListener('click', () => this.startPendingInsert(todo.id, 'below'));
         insertControls.appendChild(addAboveButton);
         insertControls.appendChild(addBelowButton);
         li.appendChild(insertControls);
@@ -208,6 +231,36 @@ class TodoList {
         button.textContent = text;
         button.setAttribute('aria-label', ariaLabel);
         return button;
+    }
+
+    createPendingInsertElement() {
+        const li = document.createElement('li');
+        li.className = 'todo-item pending-insert';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'edit-input';
+        input.placeholder = 'Type a new item';
+
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Save';
+        saveButton.className = 'save-btn';
+        saveButton.addEventListener('click', () => this.savePendingInsert(input.value));
+
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.className = 'cancel-btn';
+        cancelButton.addEventListener('click', () => this.cancelPendingInsert());
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.savePendingInsert(input.value);
+            if (e.key === 'Escape') this.cancelPendingInsert();
+        });
+
+        li.appendChild(input);
+        li.appendChild(saveButton);
+        li.appendChild(cancelButton);
+        return li;
     }
 
     attachDragListeners(li, todoId) {
@@ -260,6 +313,7 @@ class TodoList {
 
     startEditing(id) {
         if (this.editingId === id) return;
+        if (this.pendingInsert) return;
         
         const todo = this.todos.find(t => t.id === id);
         if (!todo) return;
@@ -317,10 +371,41 @@ class TodoList {
     render() {
         this.todoList.innerHTML = '';
         const filteredTodos = this.getFilteredTodos();
-        filteredTodos.forEach(todo => {
+        const pending = this.pendingInsert;
+
+        if (!pending) {
+            filteredTodos.forEach(todo => {
+                const element = this.createTodoElement(todo);
+                this.todoList.appendChild(element);
+            });
+            return;
+        }
+
+        const referenceFilteredIndex = filteredTodos.findIndex(todo => todo.id === pending.referenceId);
+        if (referenceFilteredIndex === -1) {
+            this.pendingInsert = null;
+            filteredTodos.forEach(todo => {
+                const element = this.createTodoElement(todo);
+                this.todoList.appendChild(element);
+            });
+            return;
+        }
+
+        const insertAt = pending.position === 'above' ? referenceFilteredIndex : referenceFilteredIndex + 1;
+        filteredTodos.forEach((todo, index) => {
+            if (index === insertAt) this.todoList.appendChild(this.createPendingInsertElement());
             const element = this.createTodoElement(todo);
             this.todoList.appendChild(element);
         });
+
+        if (insertAt === filteredTodos.length) {
+            this.todoList.appendChild(this.createPendingInsertElement());
+        }
+
+        const pendingInput = this.todoList.querySelector('.pending-insert .edit-input');
+        if (pendingInput) {
+            pendingInput.focus();
+        }
     }
 
     saveTodos() {
