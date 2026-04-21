@@ -56,16 +56,32 @@ class TodoList {
     addTodo() {
         const text = this.todoInput.value.trim();
         if (text) {
-            const todo = {
-                id: Date.now(),
-                text,
-                completed: false
-            };
-            this.todos.push(todo);
+            const todo = this.createTodo(text);
+            this.todos.unshift(todo);
             this.saveTodos();
             this.render();
             this.todoInput.value = '';
         }
+    }
+
+    createTodo(text) {
+        return {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            text,
+            completed: false
+        };
+    }
+
+    addTodoRelativeTo(referenceId, position) {
+        const referenceIndex = this.todos.findIndex(todo => todo.id === referenceId);
+        if (referenceIndex === -1) return;
+
+        const newTodo = this.createTodo('New item');
+        const insertIndex = position === 'above' ? referenceIndex : referenceIndex + 1;
+        this.todos.splice(insertIndex, 0, newTodo);
+        this.saveTodos();
+        this.render();
+        this.startEditing(newTodo.id);
     }
 
     deleteTodo(id) {
@@ -135,6 +151,18 @@ class TodoList {
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.setAttribute('data-id', todo.id);
 
+        const insertControls = document.createElement('div');
+        insertControls.className = 'insert-controls';
+        const addAboveButton = this.createInsertButton('+', 'Add item above');
+        addAboveButton.classList.add('add-above-btn');
+        addAboveButton.addEventListener('click', () => this.addTodoRelativeTo(todo.id, 'above'));
+        const addBelowButton = this.createInsertButton('+', 'Add item below');
+        addBelowButton.classList.add('add-below-btn');
+        addBelowButton.addEventListener('click', () => this.addTodoRelativeTo(todo.id, 'below'));
+        insertControls.appendChild(addAboveButton);
+        insertControls.appendChild(addBelowButton);
+        li.appendChild(insertControls);
+
         const canDrag = this.currentFilter === 'all' && this.editingId !== todo.id;
         if (canDrag) {
             li.draggable = true;
@@ -171,6 +199,15 @@ class TodoList {
         li.appendChild(deleteButton);
 
         return li;
+    }
+
+    createInsertButton(text, ariaLabel) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'insert-btn';
+        button.textContent = text;
+        button.setAttribute('aria-label', ariaLabel);
+        return button;
     }
 
     attachDragListeners(li, todoId) {
